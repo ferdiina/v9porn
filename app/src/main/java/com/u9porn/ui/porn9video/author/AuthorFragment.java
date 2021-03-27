@@ -3,7 +3,6 @@ package com.u9porn.ui.porn9video.author;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,22 +12,16 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
-import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.orhanobut.logger.Logger;
 import com.sdsmdg.tastytoast.TastyToast;
 import com.u9porn.R;
 import com.u9porn.adapter.V91PornAdapter;
-import com.u9porn.constants.Keys;
-import com.u9porn.constants.KeysActivityRequestResultCode;
 import com.u9porn.data.db.entity.V9PornItem;
 import com.u9porn.ui.MvpFragment;
 import com.u9porn.ui.porn9video.play.BasePlayVideo;
-import com.u9porn.ui.porn9video.user.UserLoginActivity;
 import com.u9porn.utils.AppUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -51,8 +44,7 @@ public class AuthorFragment extends MvpFragment<AuthorView, AuthorPresenter> imp
     @BindView(R.id.swipe_layout)
     SwipeRefreshLayout swipeLayout;
     Unbinder unbinder;
-    @BindView(R.id.tv_notice_info)
-    TextView tvNoticeInfo;
+
     private V9PornItem v9PornItem;
 
     private V91PornAdapter mV91PornAdapter;
@@ -69,27 +61,22 @@ public class AuthorFragment extends MvpFragment<AuthorView, AuthorPresenter> imp
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        List<V9PornItem> mV9PornItemList = new ArrayList<>();
-        mV91PornAdapter = new V91PornAdapter(R.layout.item_v_9porn, mV9PornItemList);
-        mV91PornAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-                V9PornItem v9PornItems = (V9PornItem) adapter.getData().get(position);
-                BasePlayVideo basePlayVideo = (BasePlayVideo) getActivity();
-                if (basePlayVideo != null) {
-                    basePlayVideo.setV9PornItems(v9PornItems);
-                    basePlayVideo.initData();
-                }
+        mV91PornAdapter = new V91PornAdapter(R.layout.item_v_9porn);
+        mV91PornAdapter.setOnItemClickListener((adapter, view, position) -> {
+            V9PornItem v9PornItems = (V9PornItem) adapter.getData().get(position);
+            BasePlayVideo basePlayVideo = (BasePlayVideo) getActivity();
+            if (basePlayVideo != null) {
+                basePlayVideo.setV9PornItems(v9PornItems);
+                basePlayVideo.initData();
             }
         });
-        mV91PornAdapter.setOnLoadMoreListener(new BaseQuickAdapter.RequestLoadMoreListener() {
-            @Override
-            public void onLoadMoreRequested() {
-                if (canLoadAuthorVideos()) {
-                    presenter.authorVideos(v9PornItem.getVideoResult().getOwnerId(), false);
-                }
-
+        mV91PornAdapter.setOnLoadMoreListener(() -> {
+            if (canLoadAuthorVideos()) {
+                presenter.authorVideos(v9PornItem.getVideoResult().getOwnerId(), false);
+            } else {
+                showError("数据错误，无法加载");
             }
+
         }, recyclerView);
 
     }
@@ -114,61 +101,35 @@ public class AuthorFragment extends MvpFragment<AuthorView, AuthorPresenter> imp
 
     private void init() {
         AppUtils.setColorSchemeColors(getContext(), swipeLayout);
-        swipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                if (canLoadAuthorVideos()) {
-                    presenter.authorVideos(v9PornItem.getVideoResult().getOwnerId(), true);
-                }
+        swipeLayout.setOnRefreshListener(() -> {
+            if (canLoadAuthorVideos()) {
+                presenter.authorVideos(v9PornItem.getVideoResult().getOwnerId(), true);
+            } else {
+                showError("数据错误，无法加载");
             }
         });
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(mV91PornAdapter);
-        tvNoticeInfo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (canLoadAuthorVideos()) {
-                    tvNoticeInfo.setVisibility(View.GONE);
-                    presenter.authorVideos(v9PornItem.getVideoResult().getOwnerId(), false);
-                } else {
-                    goToLogin();
-                }
-            }
-        });
-        if (canLoadAuthorVideos()) {
-            tvNoticeInfo.setVisibility(View.GONE);
-        } else {
-            tvNoticeInfo.setVisibility(View.VISIBLE);
-        }
     }
 
     @Override
     protected void onLazyLoadOnce() {
         super.onLazyLoadOnce();
-        loadAuthorVideos();
-    }
-
-    public void loadAuthorVideos() {
         if (canLoadAuthorVideos()) {
-            tvNoticeInfo.setVisibility(View.GONE);
-            presenter.authorVideos(v9PornItem.getVideoResult().getOwnerId(), false);
+            loadAuthorVideos();
         } else {
-            tvNoticeInfo.setVisibility(View.VISIBLE);
+            showError("数据错误，无法加载");
         }
     }
 
-    private boolean canLoadAuthorVideos() {
-        return presenter.isUserLogin() && v9PornItem != null && v9PornItem.getVideoResultId() != 0;
+    public void loadAuthorVideos() {
+        presenter.authorVideos(v9PornItem.getVideoResult().getOwnerId(), false);
+
     }
 
-    /**
-     * 去登录
-     */
-    private void goToLogin() {
-        Intent intent = new Intent(getContext(), UserLoginActivity.class);
-        intent.putExtra(Keys.KEY_INTENT_LOGIN_FOR_ACTION, KeysActivityRequestResultCode.LOGIN_ACTION_FOR_LOOK_AUTHOR_VIDEO);
-        startActivityForResultWithAnimation(intent, 0);
+    private boolean canLoadAuthorVideos() {
+        return v9PornItem != null && v9PornItem.getVideoResult() != null && v9PornItem.getVideoResultId() != 0;
     }
 
     @Override
@@ -179,7 +140,6 @@ public class AuthorFragment extends MvpFragment<AuthorView, AuthorPresenter> imp
     @NonNull
     @Override
     public AuthorPresenter createPresenter() {
-        getActivityComponent().inject(this);
         return authorPresenter;
     }
 
@@ -205,7 +165,6 @@ public class AuthorFragment extends MvpFragment<AuthorView, AuthorPresenter> imp
 
     @Override
     public void setData(List<V9PornItem> data) {
-        tvNoticeInfo.setVisibility(View.GONE);
         mV91PornAdapter.setNewData(data);
         recyclerView.smoothScrollToPosition(0);
         swipeLayout.setRefreshing(false);
@@ -219,7 +178,6 @@ public class AuthorFragment extends MvpFragment<AuthorView, AuthorPresenter> imp
     @Override
     public void showContent() {
         swipeLayout.setRefreshing(false);
-        tvNoticeInfo.setVisibility(View.GONE);
     }
 
     @Override

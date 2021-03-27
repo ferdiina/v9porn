@@ -1,17 +1,18 @@
 package com.u9porn;
 
-import android.support.multidex.MultiDexApplication;
+import android.content.Context;
+import android.support.multidex.MultiDex;
 import android.support.v7.app.AppCompatDelegate;
+import android.webkit.WebView;
 
-import com.bugsnag.android.Bugsnag;
 import com.helper.loadviewhelper.load.LoadViewHelper;
 import com.liulishuo.filedownloader.FileDownloader;
 import com.squareup.leakcanary.LeakCanary;
+import com.tencent.bugly.crashreport.CrashReport;
 import com.u9porn.data.DataManager;
-import com.u9porn.di.component.ApplicationComponent;
-import com.u9porn.di.component.DaggerApplicationComponent;
-import com.u9porn.di.module.ApplicationModule;
+import com.u9porn.di.component.DaggerAppComponent;
 import com.u9porn.eventbus.LowMemoryEvent;
+import com.u9porn.utils.AddressHelper;
 import com.u9porn.utils.AppLogger;
 
 import org.greenrobot.eventbus.EventBus;
@@ -19,6 +20,8 @@ import org.greenrobot.eventbus.EventBus;
 import javax.inject.Inject;
 
 import cn.bingoogolapple.swipebacklayout.BGASwipeBackHelper;
+import dagger.android.AndroidInjector;
+import dagger.android.support.DaggerApplication;
 
 /**
  * 应用入口
@@ -27,14 +30,16 @@ import cn.bingoogolapple.swipebacklayout.BGASwipeBackHelper;
  * @date 2017/11/14
  */
 
-public class MyApplication extends MultiDexApplication {
+public class MyApplication extends DaggerApplication {
 
     private static final String TAG = MyApplication.class.getSimpleName();
 
-    private ApplicationComponent applicationComponent;
-
     @Inject
     DataManager dataManager;
+    @Inject
+    WebView mWebView;
+    @Inject
+    AddressHelper addressHelper;
 
     private static MyApplication myApplication;
 
@@ -42,8 +47,6 @@ public class MyApplication extends MultiDexApplication {
     public void onCreate() {
         super.onCreate();
         myApplication = this;
-        applicationComponent = DaggerApplicationComponent.builder().applicationModule(new ApplicationModule(this)).build();
-        applicationComponent.inject(this);
         initNightMode();
         AppLogger.initLogger();
         initLeakCanary();
@@ -51,8 +54,9 @@ public class MyApplication extends MultiDexApplication {
         initFileDownload();
         if (!BuildConfig.DEBUG) {
             //初始化bug收集
-            Bugsnag.init(this);
+          //  Bugsnag.init(this);
         }
+        CrashReport.initCrashReport(getApplicationContext(), "e426041d83", BuildConfig.DEBUG);
         BGASwipeBackHelper.init(this, null);
     }
 
@@ -60,8 +64,10 @@ public class MyApplication extends MultiDexApplication {
         return myApplication;
     }
 
-    public ApplicationComponent getApplicationComponent() {
-        return applicationComponent;
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(this);
     }
 
     private void initNightMode() {
@@ -107,5 +113,17 @@ public class MyApplication extends MultiDexApplication {
 
     public DataManager getDataManager() {
         return dataManager;
+    }
+
+    public WebView getWebView(){
+        return mWebView;
+    }
+
+    public AddressHelper getAddressHelper(){
+        return addressHelper;
+    }
+    @Override
+    protected AndroidInjector<? extends DaggerApplication> applicationInjector() {
+        return DaggerAppComponent.builder().application(this).build();
     }
 }

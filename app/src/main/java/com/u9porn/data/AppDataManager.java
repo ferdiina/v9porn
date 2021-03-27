@@ -1,5 +1,7 @@
 package com.u9porn.data;
 
+import android.graphics.Bitmap;
+
 import com.danikula.videocache.HttpProxyCacheServer;
 import com.u9porn.cookie.CookieManager;
 import com.u9porn.data.db.DbHelper;
@@ -10,8 +12,8 @@ import com.u9porn.data.model.HuaBan;
 import com.u9porn.data.model.MeiZiTu;
 import com.u9porn.data.model.Mm99;
 import com.u9porn.data.model.Notice;
-import com.u9porn.data.model.PavModel;
-import com.u9porn.data.model.PavVideoParserJsonResult;
+import com.u9porn.data.model.pxgav.PxgavResultWithBlockId;
+import com.u9porn.data.model.pxgav.PxgavVideoParserJsonResult;
 import com.u9porn.data.model.PinnedHeaderEntity;
 import com.u9porn.data.model.F9PornContent;
 import com.u9porn.data.model.ProxyModel;
@@ -21,7 +23,6 @@ import com.u9porn.data.model.User;
 import com.u9porn.data.model.VideoComment;
 import com.u9porn.data.db.entity.VideoResult;
 import com.u9porn.data.model.axgle.AxgleResponse;
-import com.u9porn.data.model.axgle.AxgleVideo;
 import com.u9porn.data.network.ApiHelper;
 import com.u9porn.data.prefs.PreferencesHelper;
 import com.u9porn.utils.UserHelper;
@@ -34,6 +35,7 @@ import javax.inject.Singleton;
 import io.reactivex.Observable;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * @author flymegoc
@@ -184,8 +186,8 @@ public class AppDataManager implements DataManager {
     }
 
     @Override
-    public Observable<String> favoritePorn9Video(String uId, String videoId, String ownnerId) {
-        return mApiHelper.favoritePorn9Video(uId, videoId, ownnerId);
+    public Observable<String> favoritePorn9Video(String uId, String videoId, String uvid) {
+        return mApiHelper.favoritePorn9Video(uId, videoId, uvid);
     }
 
     @Override
@@ -196,6 +198,11 @@ public class AppDataManager implements DataManager {
     @Override
     public Observable<List<V9PornItem>> deletePorn9MyFavoriteVideo(String rvid) {
         return mApiHelper.deletePorn9MyFavoriteVideo(rvid);
+    }
+
+    @Override
+    public Observable<Bitmap> porn9VideoLoginCaptcha() {
+        return mApiHelper.porn9VideoLoginCaptcha();
     }
 
     @Override
@@ -234,6 +241,11 @@ public class AppDataManager implements DataManager {
     }
 
     @Override
+    public Observable<String> commonQuestions() {
+        return mApiHelper.commonQuestions();
+    }
+
+    @Override
     public Observable<BaseResult<List<MeiZiTu>>> listMeiZiTu(String tag, int page, boolean pullToRefresh) {
         return mApiHelper.listMeiZiTu(tag, page, pullToRefresh);
     }
@@ -254,18 +266,18 @@ public class AppDataManager implements DataManager {
     }
 
     @Override
-    public Observable<List<PavModel>> loadPavListByCategory(String category, boolean pullToRefresh) {
-        return mApiHelper.loadPavListByCategory(category, pullToRefresh);
+    public Observable<PxgavResultWithBlockId> loadPxgavListByCategory(String category, boolean pullToRefresh) {
+        return mApiHelper.loadPxgavListByCategory(category, pullToRefresh);
     }
 
     @Override
-    public Observable<List<PavModel>> loadMorePavListByCategory(String category, int page, boolean pullToRefresh) {
-        return mApiHelper.loadMorePavListByCategory(category, page, pullToRefresh);
+    public Observable<PxgavResultWithBlockId> loadMorePxgavListByCategory(String category, int page, String lastBlockId, boolean pullToRefresh) {
+        return mApiHelper.loadMorePxgavListByCategory(category, page, lastBlockId, pullToRefresh);
     }
 
     @Override
-    public Observable<PavVideoParserJsonResult> loadPavVideoUrl(String url, String pId, boolean pullToRefresh) {
-        return mApiHelper.loadPavVideoUrl(url, pId, pullToRefresh);
+    public Observable<PxgavVideoParserJsonResult> loadPxgavVideoUrl(String url, String pId, boolean pullToRefresh) {
+        return mApiHelper.loadPxgavVideoUrl(url, pId, pullToRefresh);
     }
 
     @Override
@@ -419,16 +431,6 @@ public class AppDataManager implements DataManager {
     }
 
     @Override
-    public void setNeverAskForWatchDownloadTip(boolean neverAskForWatchDownloadTip) {
-        mPreferencesHelper.setNeverAskForWatchDownloadTip(neverAskForWatchDownloadTip);
-    }
-
-    @Override
-    public boolean isNeverAskForWatchDownloadTip() {
-        return mPreferencesHelper.isNeverAskForWatchDownloadTip();
-    }
-
-    @Override
     public void setIgnoreUpdateVersionCode(int versionCode) {
         mPreferencesHelper.setIgnoreUpdateVersionCode(versionCode);
     }
@@ -469,22 +471,22 @@ public class AppDataManager implements DataManager {
     }
 
     @Override
-    public void setMainFirstTabShow(int firstTabShow) {
+    public void setMainFirstTabShow(String firstTabShow) {
         mPreferencesHelper.setMainFirstTabShow(firstTabShow);
     }
 
     @Override
-    public int getMainFirstTabShow() {
+    public String getMainFirstTabShow() {
         return mPreferencesHelper.getMainFirstTabShow();
     }
 
     @Override
-    public void setMainSecondTabShow(int secondTabShow) {
+    public void setMainSecondTabShow(String secondTabShow) {
         mPreferencesHelper.setMainSecondTabShow(secondTabShow);
     }
 
     @Override
-    public int getMainSecondTabShow() {
+    public String getMainSecondTabShow() {
         return mPreferencesHelper.getMainSecondTabShow();
     }
 
@@ -539,6 +541,16 @@ public class AppDataManager implements DataManager {
     }
 
     @Override
+    public boolean isFixMainNavigation() {
+        return mPreferencesHelper.isFixMainNavigation();
+    }
+
+    @Override
+    public void setFixMainNavigation(boolean fixMainNavigation) {
+        mPreferencesHelper.setFixMainNavigation(fixMainNavigation);
+    }
+
+    @Override
     public void existProxyTest() {
         mApiHelper.existProxyTest();
     }
@@ -574,18 +586,28 @@ public class AppDataManager implements DataManager {
     }
 
     @Override
-    public Observable<List<AxgleVideo>> searchAxgleVideo() {
-        return mApiHelper.searchAxgleVideo();
+    public Observable<AxgleResponse> searchAxgleVideo(String keyWord, int page) {
+        return mApiHelper.searchAxgleVideo(keyWord, page);
     }
 
     @Override
-    public Observable<List<AxgleVideo>> searchAxgleJavVideo() {
-        return mApiHelper.searchAxgleJavVideo();
+    public Observable<AxgleResponse> searchAxgleJavVideo(String keyWord, int page) {
+        return mApiHelper.searchAxgleJavVideo(keyWord, page);
     }
 
     @Override
     public Call<ResponseBody> getPlayVideoUrl(String url) {
         return mApiHelper.getPlayVideoUrl(url);
+    }
+
+    @Override
+    public Observable<Response<ResponseBody>> testV9Porn(String url) {
+        return mApiHelper.testV9Porn(url);
+    }
+
+    @Override
+    public Observable<Response<ResponseBody>> verifyGoogleRecaptcha(String action, String r, String id, String recaptcha) {
+        return mApiHelper.verifyGoogleRecaptcha(action, r, id, recaptcha);
     }
 
     @Override

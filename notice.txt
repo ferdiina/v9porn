@@ -1,9 +1,9 @@
 {
   "noticeMessage": "
-    当前1.0.5版本9*porn视频如果不是从主界面列表进入播放界面，均会造成程序崩溃，请静待更新，如影响使用，退回1.0.4即可。
+    v1.2.2出现503的小伙伴请手动下载apk安装包覆盖安装即可
   ",
-  "noticeTime": "2018年8月21日",
+  "noticeTime": "2021年03月04日",
    "noticeTitle": "公告",
    "noticeer": "Adimn",
-   "versionCode": 2
+   "versionCode": 6
  }

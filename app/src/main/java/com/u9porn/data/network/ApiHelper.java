@@ -1,29 +1,31 @@
 package com.u9porn.data.network;
 
+import android.graphics.Bitmap;
+
+import com.u9porn.data.db.entity.V9PornItem;
+import com.u9porn.data.db.entity.VideoResult;
 import com.u9porn.data.model.BaseResult;
+import com.u9porn.data.model.F9PornContent;
 import com.u9porn.data.model.F9PronItem;
 import com.u9porn.data.model.HuaBan;
 import com.u9porn.data.model.MeiZiTu;
 import com.u9porn.data.model.Mm99;
 import com.u9porn.data.model.Notice;
-import com.u9porn.data.model.PavModel;
-import com.u9porn.data.model.PavVideoParserJsonResult;
 import com.u9porn.data.model.PinnedHeaderEntity;
-import com.u9porn.data.model.F9PornContent;
 import com.u9porn.data.model.ProxyModel;
-import com.u9porn.data.db.entity.V9PornItem;
 import com.u9porn.data.model.UpdateVersion;
 import com.u9porn.data.model.User;
 import com.u9porn.data.model.VideoComment;
-import com.u9porn.data.db.entity.VideoResult;
 import com.u9porn.data.model.axgle.AxgleResponse;
-import com.u9porn.data.model.axgle.AxgleVideo;
+import com.u9porn.data.model.pxgav.PxgavResultWithBlockId;
+import com.u9porn.data.model.pxgav.PxgavVideoParserJsonResult;
 
 import java.util.List;
 
 import io.reactivex.Observable;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * @author flymegoc
@@ -55,6 +57,8 @@ public interface ApiHelper {
 
     Observable<List<V9PornItem>> deletePorn9MyFavoriteVideo(String rvid);
 
+    Observable<Bitmap> porn9VideoLoginCaptcha();
+
     Observable<User> userLoginPorn9Video(String username, String password, String captcha);
 
     Observable<User> userRegisterPorn9Video(String username, String password1, String password2, String email, String captchaInput);
@@ -69,6 +73,8 @@ public interface ApiHelper {
 
     Observable<Notice> checkNewNotice();
 
+    Observable<String> commonQuestions();
+
     Observable<BaseResult<List<MeiZiTu>>> listMeiZiTu(String tag, int page, boolean pullToRefresh);
 
     Observable<List<String>> meiZiTuImageList(int id, boolean pullToRefresh);
@@ -77,11 +83,11 @@ public interface ApiHelper {
 
     Observable<List<String>> mm99ImageList(int id, String contentUrl, boolean pullToRefresh);
 
-    Observable<List<PavModel>> loadPavListByCategory(String category, boolean pullToRefresh);
+    Observable<PxgavResultWithBlockId> loadPxgavListByCategory(String category, boolean pullToRefresh);
 
-    Observable<List<PavModel>> loadMorePavListByCategory(String category, int page, boolean pullToRefresh);
+    Observable<PxgavResultWithBlockId> loadMorePxgavListByCategory(String category, int page, String lastBlockId, boolean pullToRefresh);
 
-    Observable<PavVideoParserJsonResult> loadPavVideoUrl(String url, String pId, boolean pullToRefresh);
+    Observable<PxgavVideoParserJsonResult> loadPxgavVideoUrl(String url, String pId, boolean pullToRefresh);
 
     Observable<BaseResult<List<ProxyModel>>> loadXiCiDaiLiProxyData(int page);
 
@@ -101,9 +107,13 @@ public interface ApiHelper {
 
     Observable<AxgleResponse> axgleVideos(int page, String o, String t, String type, String c, int limit);
 
-    Observable<List<AxgleVideo>> searchAxgleVideo();
+    Observable<AxgleResponse> searchAxgleVideo(String keyWord, int page);
 
-    Observable<List<AxgleVideo>> searchAxgleJavVideo();
+    Observable<AxgleResponse> searchAxgleJavVideo(String keyWord, int page);
 
     Call<ResponseBody> getPlayVideoUrl(String url);
+
+    Observable<Response<ResponseBody>> testV9Porn(String url);
+
+    Observable<Response<ResponseBody>> verifyGoogleRecaptcha(String action, String r, String id, String recaptcha);
 }

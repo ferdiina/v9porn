@@ -8,22 +8,24 @@ import android.support.annotation.IntRange;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import com.jaeger.library.StatusBarUtil;
 import com.sdsmdg.tastytoast.TastyToast;
-import com.u9porn.MyApplication;
 import com.u9porn.R;
-import com.u9porn.data.db.entity.V9PornItem;
-import com.u9porn.di.component.ActivityComponent;
-import com.u9porn.di.component.DaggerActivityComponent;
-import com.u9porn.di.module.ActivityModule;
-import com.u9porn.utils.PlaybackEngine;
 import com.u9porn.constants.Keys;
+import com.u9porn.data.db.entity.V9PornItem;
+import com.u9porn.eventbus.NeedCheckGoogleRecaptchaEvent;
+import com.u9porn.ui.google.GoogleRecaptchaVerifyActivity;
+import com.u9porn.utils.PlaybackEngine;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import cn.bingoogolapple.swipebacklayout.BGASwipeBackHelper;
+import dagger.android.support.DaggerAppCompatActivity;
 
 /**
  * @author flymegoc
@@ -31,27 +33,19 @@ import cn.bingoogolapple.swipebacklayout.BGASwipeBackHelper;
  * @describe
  */
 
-public abstract class BaseAppCompatActivity extends AppCompatActivity implements BGASwipeBackHelper.Delegate {
+public abstract class BaseAppCompatActivity extends DaggerAppCompatActivity implements BGASwipeBackHelper.Delegate {
     private final String TAG = this.getClass().getSimpleName();
 
     protected BGASwipeBackHelper mSwipeBackHelper;
     protected boolean existActivityWithAnimation = true;
     protected Context context;
-    private ActivityComponent mActivityComponent;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         initSwipeBackFinish();
         super.onCreate(savedInstanceState);
-        mActivityComponent = DaggerActivityComponent.builder()
-                .activityModule(new ActivityModule(this))
-                .applicationComponent(((MyApplication) getApplication()).getApplicationComponent())
-                .build();
+        EventBus.getDefault().register(this);
         context = this;
-    }
-
-    public ActivityComponent getActivityComponent() {
-        return mActivityComponent;
     }
 
     @Override
@@ -63,6 +57,18 @@ public abstract class BaseAppCompatActivity extends AppCompatActivity implements
     public void setContentView(int layoutResID) {
         super.setContentView(layoutResID);
         setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimary));
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void checkGoogleRecaptcha(NeedCheckGoogleRecaptchaEvent needCheckGoogleRecaptchaEvent) {
+        if (needGoToCheckGoogleRecaptcha()) {
+            Intent intent = new Intent(this, GoogleRecaptchaVerifyActivity.class);
+            startActivityWithAnimation(intent);
+        }
+    }
+
+    protected boolean needGoToCheckGoogleRecaptcha() {
+        return true;
     }
 
     /**
@@ -128,6 +134,7 @@ public abstract class BaseAppCompatActivity extends AppCompatActivity implements
 
     @Override
     protected void onDestroy() {
+        EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
 
@@ -178,7 +185,7 @@ public abstract class BaseAppCompatActivity extends AppCompatActivity implements
     /**
      * 设置状态栏颜色
      *
-     * @param color color
+     * @param color          color
      * @param statusBarAlpha 透明度
      */
     public void setStatusBarColor(@ColorInt int color, @IntRange(from = 0, to = 255) int statusBarAlpha) {
